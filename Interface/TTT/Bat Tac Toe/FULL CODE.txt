@@ -1,0 +1,612 @@
+#CATEGORY "47" // Adagio (AMS)
+/*******************************************************************************************
+  SIMPL+ Module Information
+  (Fill in comments below)
+*******************************************************************************************/
+/*
+Dealer Name:
+System Name:
+System Number:
+Programmer: Isaac Porter, Leanna Lincoln, Caleb Hackett
+Comments:
+*/
+
+#DEFAULT_VOLATILE
+#ENABLE_STACK_CHECKING
+#ENABLE_TRACE
+#DEFINE_CONSTANT GRIDSIZE 3
+#DEFINE_CONSTANT SQGRIDSIZE 9
+
+
+/*******************************************************************************************
+  DIGITAL, ANALOG and SERIAL INPUTS and OUTPUTS
+  (Uncomment and declare inputs and outputs as needed)
+*******************************************************************************************/
+            DIGITAL_INPUT END_GAME;												
+            DIGITAL_INPUT NEXT_GAME;
+            DIGITAL_INPUT SET_GRID[SQGRIDSIZE];
+            DIGITAL_INPUT BATMAN_FIRST;
+            DIGITAL_INPUT JOKER_FIRST;
+            DIGITAL_INPUT ONE_PLAYERS;
+						DIGITAL_INPUT TWO_PLAYERS;
+						DIGITAL_INPUT EASY_GAME;
+						DIGITAL_INPUT HARD_GAME;
+
+            DIGITAL_OUTPUT END_GAME_BATMAN;
+            DIGITAL_OUTPUT END_GAME_JOKER;
+            DIGITAL_OUTPUT END_GAME_CATWOMAN;
+						DIGITAL_OUTPUT COUNT_ACTIVE;
+						DIGITAL_OUTPUT CHOOSE_CHARACTER;
+						DIGITAL_OUTPUT CHOOSE_HOW_MANY;
+						DIGITAL_OUTPUT CHOOSE_DIFFICULTY;
+						DIGITAL_OUTPUT HOW_MANY_PLAYERS;
+						DIGITAL_OUTPUT HOW_DIFFICULT;
+                
+						ANALOG_OUTPUT CURRENTPLAYER;
+						ANALOG_OUTPUT WHO_WON;
+						ANALOG_OUTPUT WHO_LOST;
+						ANALOG_OUTPUT WINNER_COUNT;
+						ANALOG_OUTPUT LOSER_COUNT;
+            ANALOG_OUTPUT GRID[SQGRIDSIZE];
+/*******************************************************************************************
+  Parameter Properties
+  (Uncomment and declare parameter properties as needed)
+*******************************************************************************************/
+/*******************************************************************************************
+  Global Variables
+  (Uncomment and declare global variables as needed)
+  Note:  Be sure to initialize all declared STRING variables as needed
+         For example, in Function Main: myString = "";
+*******************************************************************************************/
+   INTEGER BOARD[2][2],
+           OLDPLAYER,
+           LASTPLACEDROW,
+           LASTPLACEDCOLUMN,
+		   		 BATMAN_COUNT,
+		       JOKER_COUNT;
+/*******************************************************************************************
+  Functions
+  (Add any additional functions here)
+  Note:  Functions must be physically placed before the location in
+         the code that calls them.
+*******************************************************************************************/
+Function SETBOARD()
+{
+            END_GAME_BATMAN = 0;
+            END_GAME_JOKER = 0;
+            END_GAME_CATWOMAN = 0;                     
+}
+
+Function RESET_COUNT()
+{
+						WHO_WON = 0;
+						WHO_LOST = 0;
+   	  			BATMAN_COUNT = 0;
+            JOKER_COUNT = 0;
+						WINNER_COUNT = 0;
+						LOSER_COUNT = 0;
+						COUNT_ACTIVE = 0;
+  					CHOOSE_CHARACTER = 0;
+  					CHOOSE_HOW_MANY = 1;
+}
+
+Function SWITCHPLAYER()
+{
+   			INTEGER TEMP;
+
+    		TEMP = CURRENTPLAYER;
+    		CURRENTPLAYER = OLDPLAYER;                                      // Switches players from 1 to 4, or 4 to 1
+   			OLDPLAYER = TEMP;
+}
+
+Function CLEAR_BOARD()
+{
+    		integer i,j;
+            for (i = 0 to 2)
+            {
+                        for (j = 0 to 2)
+                        {
+                                    BOARD[i][j] = 0;               // Sets every cell in BOARD to zero
+                        }
+            }
+            SETBOARD();
+}
+
+Integer_Function GET_CELL_STATE(integer ROW, integer COL)
+{
+           if (BOARD[ROW][COL] = 1)                                  // If cell has 1 (BATMAN), return 1
+            {
+            return (1);
+            }
+            
+            else if (BOARD[ROW][COL] = 4)                         	 // If cell has 4 (JOKER), return 4
+            {
+            return (4);
+            }
+            else return (0);                               				   // Return empty cell
+
+}
+Function UPDATE_BOARD()
+{
+            integer i, rows, column;
+            for (i = 1 to SQGRIDSIZE)
+            {
+                        column = (i - 1) % GRIDSIZE;
+                       rows = ((i - 1) - column) / GRIDSIZE;
+                        GRID[i] = GET_CELL_STATE(rows, column);
+            }
+}
+
+
+Function SET_CELL_STATE(integer ROW, integer COL)
+{
+            BOARD[ROW][COL] = CURRENTPLAYER;                     // Sets BOARD to CURRENTPLAYER, 1 for BATMAN or 4 for JOKER
+}
+   
+Integer_Function CHECK_IF_WIN()
+{
+        if
+                        (  
+                           BOARD[LASTPLACEDROW] [0]     = CURRENTPLAYER
+                        && BOARD[LASTPLACEDROW] [1]     = CURRENTPLAYER
+                        && BOARD[LASTPLACEDROW] [2]     = CURRENTPLAYER 
+
+                        || BOARD[0] [LASTPLACEDCOLUMN]  = CURRENTPLAYER
+                        && BOARD[1] [LASTPLACEDCOLUMN]  = CURRENTPLAYER
+                        && BOARD[2] [LASTPLACEDCOLUMN]  = CURRENTPLAYER
+
+
+                        || LASTPLACEDROW = LASTPLACEDCOLUMN            
+                        && BOARD[0] [0]                 = CURRENTPLAYER
+                        && BOARD[1] [1]                 = CURRENTPLAYER
+                        && BOARD[2] [2]                 = CURRENTPLAYER
+
+                        || LASTPLACEDROW + LASTPLACEDCOLUMN = 2 
+                        && BOARD[0] [2]                 = CURRENTPLAYER
+                        && BOARD[1] [1]                 = CURRENTPLAYER
+                        && BOARD[2] [0]                 = CURRENTPLAYER
+                        )
+                        return(1);
+
+                        else return (0);
+                        
+}
+ 
+Integer_Function CHECK_IF_DRAW()
+{	
+
+IF(((BOARD[0][0]+BOARD[0][1]+BOARD[0][2] = 5)||(BOARD[0][0]+BOARD[0][1]+BOARD[0][2] = 6)||(BOARD[0][0]+BOARD[0][1]+BOARD[0][2] = 9)) && ((BOARD[1][0]+BOARD[1][1]+BOARD[1][2] = 5)||(BOARD[1][0]+BOARD[1][1]+BOARD[1][2] = 6)||(BOARD[1][0]+BOARD[1][1]+BOARD[1][2] = 9)) && ((BOARD[2][0]+BOARD[2][1]+BOARD[2][2] = 5)||(BOARD[2][0]+BOARD[2][1]+BOARD[2][2] = 6)||(BOARD[2][0]+BOARD[2][1]+BOARD[2][2] = 9)) && ((BOARD[0][0]+BOARD[1][0]+BOARD[2][0] = 5)||(BOARD[0][0]+BOARD[1][0]+BOARD[2][0] = 6)||(BOARD[0][0]+BOARD[1][0]+BOARD[2][0] = 9)) && ((BOARD[0][1]+BOARD[1][1]+BOARD[2][1] = 5)||(BOARD[0][1]+BOARD[1][1]+BOARD[2][1] = 6)||(BOARD[0][1]+BOARD[1][1]+BOARD[2][1] = 9))
+&& ((BOARD[0][2]+BOARD[1][2]+BOARD[2][2] = 5)||(BOARD[0][2]+BOARD[1][2]+BOARD[2][2] = 6)||(BOARD[0][2]+BOARD[1][2]+BOARD[2][2] = 9)) && ((BOARD[0][0]+BOARD[1][1]+BOARD[2][2] = 5)||(BOARD[0][0]+BOARD[1][1]+BOARD[2][2] = 6)||(BOARD[0][0]+BOARD[1][1]+BOARD[2][2] = 9)) && ((BOARD[0][2]+BOARD[1][1]+BOARD[2][0] = 5)||(BOARD[0][2]+BOARD[1][1]+BOARD[2][0] = 6)||(BOARD[0][2]+BOARD[1][1]+BOARD[2][0] = 9)))											//Checking to see if there is a draw state in every row, column, and diagonal. 
+    {
+        RETURN(1);																	//Return 1 if draw state is detected
+    }
+ELSE
+    {
+        RETURN(0);																	//Return 0 if draw state is not detected
+    }
+		
+}
+Integer_Function CHECK_BOARD()
+{           if (CHECK_IF_WIN() = 1)         
+
+            return(CURRENTPLAYER);                   // Returns CURRENTPLAYER if they win
+            
+            else if (CHECK_IF_DRAW() = 1)
+            return (10);                             // Returns 10 if draw
+                        
+            else return (0);                         // Reurns 0 if continue
+}                                    
+
+Function DUMB_AI()
+{
+  INTEGER I,J;
+  DO
+  {
+   	  I = RANDOM(0,2);
+  		J = RANDOM(0,2); 
+    
+  }
+  UNTIL(GET_CELL_STATE(I,J) = 0);
+  SET_CELL_STATE(I,J);
+  
+}
+
+FUNCTION SMART_AI()
+{
+  					INTEGER I, J, K, X, Y;
+            INTEGER NOT_CURRENTPLAYER;
+  					NOT_CURRENTPLAYER = OLDPLAYER;
+  					
+  
+            FOR(I = 0 TO 2)				//LOOP THAT CHECKS EVERY ROW,COLUMN FOR 2 OF THE CURRENT PLAYER AND AN EMPTY SPACE. wILL PLACE PIECE IN EMPTY SPACE TO WIN THE GAME
+            {
+              IF((BOARD[I][0] = CURRENTPLAYER) && (BOARD[I][1] = CURRENTPLAYER) && (BOARD[I][2] = 0))
+              {
+                BOARD[I][2] = CURRENTPLAYER;
+                RETURN;
+              } 
+              IF((BOARD[I][0] = CURRENTPLAYER) && (BOARD[I][1] = 0) && (BOARD[I][2] = CURRENTPLAYER))
+              {
+                BOARD[I][1] = CURRENTPLAYER;
+                RETURN;
+              }
+              IF((BOARD[I][0] = 0) && (BOARD[I][1] = CURRENTPLAYER) && (BOARD[I][2] = CURRENTPLAYER))
+              {
+                BOARD[I][0] = CURRENTPLAYER;
+                RETURN;
+              }
+                
+                
+              IF((BOARD[0][I] = CURRENTPLAYER) && (BOARD[1][I] = CURRENTPLAYER) && (BOARD[2][I] = 0))
+              {
+                BOARD[2][I] = CURRENTPLAYER;
+                RETURN;
+              }
+              IF((BOARD[0][I] = CURRENTPLAYER) && (BOARD[1][I] = 0) && (BOARD[2][I] = CURRENTPLAYER))
+              {
+                BOARD[1][I] = CURRENTPLAYER;
+                RETURN;
+              }
+              IF((BOARD[0][I] = 0) && (BOARD[1][I] = CURRENTPLAYER) && (BOARD[2][I] = CURRENTPLAYER))
+              {
+                BOARD[0][I] = CURRENTPLAYER;
+                RETURN;
+              } 
+              
+            }
+  
+  					IF((BOARD[0][0] = CURRENTPLAYER) && (BOARD[1][1] = CURRENTPLAYER) && (BOARD[2][2] = 0))
+            {
+              BOARD[2][2] = CURRENTPLAYER;
+              RETURN;
+            }     
+            IF((BOARD[0][0] = CURRENTPLAYER) && (BOARD[1][1] = 0) && (BOARD[2][2] = CURRENTPLAYER))
+            {
+              BOARD[1][1] = CURRENTPLAYER;
+              RETURN;
+            }   
+            IF((BOARD[0][0] = 0) && (BOARD[1][1] = CURRENTPLAYER) && (BOARD[2][2] = CURRENTPLAYER))
+            {
+              BOARD[0][0] = CURRENTPLAYER;
+              RETURN;
+            }
+              
+            IF((BOARD[0][2] = CURRENTPLAYER) && (BOARD[1][1] = CURRENTPLAYER) && (BOARD[2][0] = 0))
+            {
+              BOARD[2][0] = CURRENTPLAYER;
+              RETURN
+            }
+            IF((BOARD[0][2] = CURRENTPLAYER) && (BOARD[1][1] = 0) && (BOARD[2][0] = CURRENTPLAYER))
+            {
+              BOARD[1][1] = CURRENTPLAYER;
+              RETURN;
+            }  
+            IF((BOARD[0][2] = 0) && (BOARD[1][1] = CURRENTPLAYER) && (BOARD[2][0] = CURRENTPLAYER))
+            {
+              BOARD[0][2] = CURRENTPLAYER;
+              RETURN;
+            }
+              
+            FOR(J = 0 TO 2)				//LOOP THAT CHECKS EVERY ROW,COLUMN FOR 2 OF THE OPPONENT PLAYER AND AN EMPTY SPACE. WILL PLACE PIECE IN EMPTY SPACE TO PREVENT OPPONENT FROM WINNING GAME
+            {
+              IF((BOARD[I][0] = NOT_CURRENTPLAYER) && (BOARD[I][1] = NOT_CURRENTPLAYER) && (BOARD[I][2] = 0))
+              {
+                BOARD[I][2] = CURRENTPLAYER;
+                RETURN;
+              }                
+              IF((BOARD[I][0] = NOT_CURRENTPLAYER) && (BOARD[I][1] = 0) && (BOARD[I][2] = NOT_CURRENTPLAYER))
+              {
+                BOARD[I][1] = CURRENTPLAYER;
+                RETURN;
+              }
+              IF((BOARD[I][0] = 0) && (BOARD[I][1] = NOT_CURRENTPLAYER) && (BOARD[I][2] = NOT_CURRENTPLAYER))
+              {
+                 BOARD[I][0] = CURRENTPLAYER;
+                RETURN;
+              }
+
+              IF((BOARD[0][I] = NOT_CURRENTPLAYER) && (BOARD[1][I] = NOT_CURRENTPLAYER) && (BOARD[2][I] = 0))
+              {
+                BOARD[2][I] = CURRENTPLAYER;
+                RETURN
+              }
+              IF((BOARD[0][I] = NOT_CURRENTPLAYER) && (BOARD[1][I] = 0) && (BOARD[2][I] = NOT_CURRENTPLAYER))
+              {
+              	BOARD[0][1] = CURRENTPLAYER;                
+                RETURN;
+              }
+                
+              IF((BOARD[0][I] = 0) && (BOARD[1][I] = NOT_CURRENTPLAYER) && (BOARD[2][I] = NOT_CURRENTPLAYER))
+              {
+                BOARD[0][I] = CURRENTPLAYER;
+                RETURN;
+              }
+                
+              
+            }
+  
+  					IF((BOARD[0][0] = NOT_CURRENTPLAYER) && (BOARD[1][1] = NOT_CURRENTPLAYER) && (BOARD[2][2] = 0))
+            {
+              BOARD[2][2] = CURRENTPLAYER;
+              RETURN;
+            }  
+            IF((BOARD[0][0] = NOT_CURRENTPLAYER) && (BOARD[1][1] = 0) && (BOARD[2][2] = NOT_CURRENTPLAYER))
+            {
+              BOARD[1][1] = CURRENTPLAYER;
+              RETURN;
+            }    
+            IF((BOARD[0][0] = 0) && (BOARD[1][1] = NOT_CURRENTPLAYER) && (BOARD[2][2] = NOT_CURRENTPLAYER))
+            {
+              BOARD[0][0] = CURRENTPLAYER;
+              RETURN;
+            }
+                
+              
+            IF((BOARD[0][2] = NOT_CURRENTPLAYER) && (BOARD[1][1] = NOT_CURRENTPLAYER) && (BOARD[2][0] = 0))
+            {
+              BOARD[2][0] = CURRENTPLAYER;
+              RETURN;
+            }  
+            IF((BOARD[0][2] = NOT_CURRENTPLAYER) && (BOARD[1][1] = 0) && (BOARD[2][0] = NOT_CURRENTPLAYER))
+            {
+              BOARD[1][1] = CURRENTPLAYER;
+              RETURN;
+            } 
+            IF((BOARD[0][2] = 0) && (BOARD[1][1] = NOT_CURRENTPLAYER) && (BOARD[2][0] = NOT_CURRENTPLAYER))
+            {
+              BOARD[0][2] = CURRENTPLAYER;
+              RETURN;
+            }
+                
+  					
+            FOR(K = 0 TO 2)				//LOOP THAT CHECKS EVERY ROW,COLUMN FOR 2 OF THE CURRENT PLAYER AND AN EMPTY SPACE. wILL PLACE PIECE IN EMPTY SPACE TO WIN THE GAME
+            {
+              IF((BOARD[I][0] = CURRENTPLAYER) && (BOARD[I][1] = 0) && (BOARD[I][2] = 0))
+              {
+                BOARD[I][2] = CURRENTPLAYER;
+                RETURN;
+              }
+              IF((BOARD[I][0] = 0) && (BOARD[I][1] = 0) && (BOARD[I][2] = CURRENTPLAYER)){
+                BOARD[I][0] = CURRENTPLAYER;
+                RETURN;
+              } 
+              IF((BOARD[I][0] = 0) && (BOARD[I][1] = CURRENTPLAYER) && (BOARD[I][2] = 0))
+              {
+                BOARD[I][0] = CURRENTPLAYER;
+                RETURN;
+              }
+                
+              IF((BOARD[0][I] = CURRENTPLAYER) && (BOARD[1][I] = 0) && (BOARD[2][I] = 0))
+              {
+                BOARD[2][I] = CURRENTPLAYER;
+                RETURN;
+              }
+              IF((BOARD[0][I] = 0) && (BOARD[1][I] = 0) && (BOARD[2][I] = CURRENTPLAYER))
+              {
+                BOARD[0][I] = CURRENTPLAYER;
+                RETURN;
+              }
+                
+              IF((BOARD[0][I] = 0) && (BOARD[1][I] = CURRENTPLAYER) && (BOARD[2][I] = 0))
+              {
+                BOARD[0][I] = CURRENTPLAYER;
+                RETURN;
+              }
+                
+              
+            }
+  
+  					IF((BOARD[0][0] = CURRENTPLAYER) && (BOARD[1][1] = 0) && (BOARD[2][2] = 0))
+            {
+              BOARD[2][2] = CURRENTPLAYER;
+              RETURN;
+            } 
+            IF((BOARD[0][0] = 0) && (BOARD[1][1] = 0) && (BOARD[2][2] = CURRENTPLAYER))
+            {
+              BOARD[0][0] = CURRENTPLAYER;
+              RETURN;
+            }
+            IF((BOARD[0][0] = 0) && (BOARD[1][1] = CURRENTPLAYER) && (BOARD[2][2] = 0))
+            {
+              BOARD[0][0] = CURRENTPLAYER;
+              RETURN;
+            }
+                
+            IF((BOARD[0][2] = CURRENTPLAYER) && (BOARD[1][1] = 0) && (BOARD[2][0] = 0))
+            {
+              BOARD[2][0] = CURRENTPLAYER;
+              RETURN;
+            }
+            IF((BOARD[0][2] = 0) && (BOARD[1][1] = 0) && (BOARD[2][0] = CURRENTPLAYER))
+            {
+              BOARD[0][2] = CURRENTPLAYER;
+              RETURN;
+            }
+                
+            IF((BOARD[0][2] = 0) && (BOARD[1][1] = CURRENTPLAYER) && (BOARD[2][0] = 0))
+            {
+              BOARD[0][2] = CURRENTPLAYER;
+              RETURN;
+            }
+              	
+            
+            IF(BOARD[1][1] = 0)
+            {
+              BOARD[1][1] = CURRENTPLAYER;
+              RETURN;
+            }
+  					
+  					IF(BOARD[0][0] = 0)
+            {
+              BOARD[0][0] = CURRENTPLAYER;
+              RETURN;
+            }
+  					IF(BOARD[0][2] = 0)
+            {
+              BOARD[0][2] = CURRENTPLAYER;
+              RETURN;
+            }
+            IF(BOARD[2][0] = 0)
+            {
+              BOARD[2][0] = CURRENTPLAYER;
+              RETURN;
+            }
+  					IF(BOARD[2][2] = 0)
+            {
+              BOARD[2][2] = CURRENTPLAYER;
+              RETURN;
+            }
+  					
+            X = RANDOM(0,2);
+            Y = RANDOM(0,2);
+            
+  					BOARD[X][Y] = CURRENTPLAYER;
+  					RETURN;
+}
+
+Function AI()
+{
+   if(HOW_DIFFICULT = 0)
+   {
+     	DUMB_AI();
+   }
+  
+	 if(HOW_DIFFICULT = 1)
+   {
+     SMART_AI();
+   }
+}
+
+/*******************************************************************************************
+  Event Handlers
+  (Uncomment and declare additional event handlers as needed)
+*******************************************************************************************/
+Threadsafe PUSH END_GAME
+{
+          CLEAR_BOARD();
+         	UPDATE_BOARD();
+       		RESET_COUNT();
+}          
+
+Threadsafe PUSH NEXT_GAME
+{
+            CLEAR_BOARD();
+            UPDATE_BOARD();
+}
+Threadsafe PUSH SET_GRID
+{
+            integer i;
+            i = GetLastModifiedArrayIndex();
+            i = i - 1;
+            LASTPLACEDCOLUMN = i % GRIDSIZE;
+            LASTPLACEDROW = (i - LASTPLACEDCOLUMN) / GRIDSIZE;
+             
+   
+			if (GET_CELL_STATE(LASTPLACEDROW, LASTPLACEDCOLUMN) = 0)
+			{
+			
+	      SET_CELL_STATE(LASTPLACEDROW, LASTPLACEDCOLUMN);
+	      UPDATE_BOARD();
+				switch (CHECK_BOARD())
+				{
+								case(1):
+								{
+	             	BATMAN_COUNT = BATMAN_COUNT + 1;
+								WINNER_COUNT = BATMAN_COUNT;
+								LOSER_COUNT = JOKER_COUNT;
+								COUNT_ACTIVE = 1;
+	              END_GAME_BATMAN= 1;
+								WHO_WON = 1;
+								WHO_LOST = 4;
+								}
+	
+	            
+	     
+	            	case(4):
+	           	 	{
+	             	JOKER_COUNT = JOKER_COUNT + 1;
+								WINNER_COUNT = JOKER_COUNT;
+								LOSER_COUNT = BATMAN_COUNT;
+								COUNT_ACTIVE = 1;
+	              END_GAME_JOKER = 1;
+              	WHO_WON = 4;
+								WHO_LOST = 1;
+	            	}
+				
+								case(10):            	
+	            	{
+	            	END_GAME_CATWOMAN = 1;
+	            	}
+	      }
+           	 	SWITCHPLAYER();
+              if (HOW_MANY_PLAYERS = 1)
+              {
+              		AI();
+                  SWITCHPLAYER();
+              }
+			}
+}			
+
+Threadsafe PUSH BATMAN_FIRST
+{
+		CURRENTPLAYER = 1;
+    OLDPLAYER = 4;
+    CHOOSE_CHARACTER = 0;
+}
+
+Threadsafe PUSH JOKER_FIRST
+{
+		CURRENTPLAYER = 4;
+    OLDPLAYER = 1;
+    CHOOSE_CHARACTER = 0;
+}
+
+Threadsafe PUSH ONE_PLAYERS
+{
+			HOW_MANY_PLAYERS = 0;
+      CHOOSE_DIFFICULTY = 1;
+      CHOOSE_PLAYERS = 0;
+}
+
+Threadsafe PUSH TWO_PLAYERS
+{
+			HOW_MANY_PLAYERS = 1;
+      CHOOSE_CHARACTER = 1;
+			CHOOSE_PLAYERS = 0;
+}
+
+Threadsafe PUSH EASY_GAME
+{
+			HOW_DIFFICULT = 0;
+      CHOOSE_CHARACTER = 1;
+      CHOOSE_DIFFICULTY = 0;
+}
+
+Threadsafe PUSH HARD_GAME
+{
+			HOW_DIFFICULT = 1;
+      CHOOSE_CHARACTER = 1;
+      CHOOSE_DIFFICULTY = 0;
+}
+/*******************************************************************************************
+  Main()
+  Uncomment and place one-time startup code here
+  (This code will get called when the system starts up)
+*******************************************************************************************/
+
+Function Main()
+{
+        	CLEAR_BOARD();
+         	UPDATE_BOARD();
+       		RESET_COUNT();
+        
+    // TODO:  Add code here
+    // Initialize declared global and local variables/arrays as needed.
+
+    // WaitForInitializationComplete();
+    // If you are reading any Input or Output variables, uncomment
+    //   the WaitForInitializationComplete statement above and read
+    //   them afterwards.  Input/Output variables will not have
+    //   their correct values set until after the logic processor
+    //   runs and propagates the values to them.
+}

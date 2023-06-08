@@ -1,0 +1,14 @@
+# SIMPL Files
+*.smw binary
+*.umc binary
+
+# VTP Files
+*.vtp binary
+*.vta binary
+*.tmf binary
+*.edc binary
+*.symx binary
+*.dap binary
+*.str binary
+*.audioarchitect binary
+*.nex binary
