@@ -3,13 +3,13 @@ This repository holds a tic-tac-toe clone that uses Batman characters. It runs o
 
 # The Game
 ### Single Player
-    Select your preferred character: Batman or Joker. Next, select your difficulty level: Easy, Medium, Difficult, or Impossible. 
+Select your preferred character: Batman or Joker. Next, select your difficulty level: Easy, Medium, Difficult, or Impossible. 
 * Easy: Randomly selects a spot.
 * Medium: Randomly selects some spots, and uses strategy to select others.
 * Difficult: Only uses strategy, and there's only 1(?) win scenario.
 * Impossible: Only uses strategy. Best outcome is a draw.
 ### Two Player
-    Select your preferred character: Batman or Joker and your friend becomes the other. First selection goes first. This is played on a single touch panel interface.
+Select your preferred character: Batman or Joker and your friend becomes the other. First selection goes first. This is played on a single touch panel interface.
 
 ## Requirements
 * Crestron 3-Series or 4-Series Processor
